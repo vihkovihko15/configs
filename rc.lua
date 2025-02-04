@@ -2,6 +2,11 @@
 -- found (e.g. lgi). If LuaRocks is not installed, do nothing.
 pcall(require, "luarocks.loader")
 
+--Awesome widgets
+local battery_widget = require("awesome-wm-widgets.battery-widget.battery")
+local volume_widget = require('awesome-wm-widgets.volume-widget.volume')
+local brightness_widget = require("awesome-wm-widgets.brightness-widget.brightness")
+
 -- Standard awesome library
 local gears = require("gears")
 local awful = require("awful")
@@ -16,8 +21,11 @@ local menubar = require("menubar")
 local hotkeys_popup = require("awful.hotkeys_popup")
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
-
 require("awful.hotkeys_popup.keys")
+
+-- Load Debian menu entries
+local debian = require("debian.menu")
+local has_fdo, freedesktop = pcall(require, "freedesktop")
 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
@@ -49,8 +57,8 @@ end
 beautiful.init(gears.filesystem.get_themes_dir() .. "default/theme.lua")
 
 -- This is used later as the default terminal and editor to run.
-terminal = "xterm"
-editor = os.getenv("EDITOR") or "nano"
+terminal = "uxterm"
+editor = os.getenv("EDITOR") or "editor"
 editor_cmd = terminal .. " -e " .. editor
 
 -- Default modkey.
@@ -62,18 +70,20 @@ modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
 awful.layout.layouts = {
-    -- awful.layout.suit.floating,
     awful.layout.suit.tile,
-    -- awful.layout.suit.tile.left,
-    -- awful.layout.suit.tile.bottom,
-    -- awful.layout.suit.tile.top,
-    -- awful.layout.suit.fair,
-    -- awful.layout.suit.fair.horizontal,
-    -- awful.layout.suit.spiral,
-    -- awful.layout.suit.spiral.dwindle,
-    -- awful.layout.suit.max,
-    -- wful.layout.suit.max.fullscreen,
-    -- awful.layout.suit.magnifier,
+awful.layout.suit.floating,
+
+
+--awful.layout.suit.tile.left,
+   -- awful.layout.suit.tile.bottom,
+   -- awful.layout.suit.tile.top,
+   -- awful.layout.suit.fair,
+   -- awful.layout.suit.fair.horizontal,
+   -- awful.layout.suit.spiral,
+   -- awful.layout.suit.spiral.dwindle,
+   -- awful.layout.suit.max,
+   -- awful.layout.suit.max.fullscreen,
+   -- awful.layout.suit.magnifier,
    -- awful.layout.suit.corner.nw,
     -- awful.layout.suit.corner.ne,
     -- awful.layout.suit.corner.sw,
@@ -84,23 +94,31 @@ awful.layout.layouts = {
 -- {{{ Menu
 -- Create a launcher widget and a main menu
 myawesomemenu = {
-   { "Pikanäppäimet", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
-   { "Käyttöohjeet", terminal .. " -e man awesome" },
-   { "Muokkaa asetuksia", editor_cmd .. " " .. awesome.conffile },
-   { "Uudelleen Käynnistä", awesome.restart },
-   { "Lopeta", function() awesome.quit() end },
+   { "hotkeys", function() hotkeys_popup.show_help(nil, awful.screen.focused()) end },
+   { "manual", terminal .. " -e man awesome" },
+   { "edit config", editor_cmd .. " " .. awesome.conffile },
+   { "restart", awesome.restart },
+   { "quit", function() awesome.quit() end },
 }
-beautiful.menu_height=20
-beautiful.menu_width=160
-beautiful.menu_bg_normal="#374247"
-beautiful.menu_bg_focus="#f7f4e0"
-beautiful.menu_fg_focus="#374247"
---beautiful.menu_fg_normal=""
-mymainmenu = awful.menu({ items = { { "Mahtava", myawesomemenu, beautiful.awesome_icon },
-                                    { "Avaa Pääte", "xterm" },
-									{ "Netti Selain", "brave-bin"}
-                                  }
-                        })
+
+local menu_awesome = { "awesome", myawesomemenu, beautiful.awesome_icon }
+local menu_terminal = { "open terminal", terminal }
+
+if has_fdo then
+    mymainmenu = freedesktop.menu.build({
+        before = { menu_awesome },
+        after =  { menu_terminal }
+    })
+else
+    mymainmenu = awful.menu({
+        items = {
+                  menu_awesome,
+                  { "Debian", debian.menu.Debian_menu.Debian },
+                  menu_terminal,
+                }
+    })
+end
+
 
 mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
                                      menu = mymainmenu })
@@ -114,7 +132,7 @@ mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
 -- Create a textclock widget
-mytextclock = wibox.widget.textclock(" %H:%M %d-%m-%Y ", 60)
+mytextclock = wibox.widget.textclock()
 
 -- Create a wibox for each screen and add it
 local taglist_buttons = gears.table.join(
@@ -197,32 +215,38 @@ awful.screen.connect_for_each_screen(function(s)
 
     -- Create a tasklist widget
     s.mytasklist = awful.widget.tasklist {
-        screen  = s,
+	--layout = wibox.layout.fixed.horizontal,
+	screen  = s,
         filter  = awful.widget.tasklist.filter.currenttags,
         buttons = tasklist_buttons
     }
 
     -- Create the wibox
-    -- s.mywibox = awful.wibar({ position = "top", screen = s })
+    s.mywibox = awful.wibar({ position = "top", screen = s })
 
     -- Add widgets to the wibox
-   --  s.mywibox:setup {
-        -- layout = wibox.layout.align.horizontal,
-        -- { -- Left widgets
-           --  layout = wibox.layout.fixed.horizontal,
-           --  mylauncher,
-            -- s.mytaglist,
-          --   s.mypromptbox,
-        -- },
-      --   s.mytasklist, -- Middle widget
-    --     { -- Right widgets
-            -- layout = wibox.layout.fixed.horizontal,
-           --  mykeyboardlayout,
-          --   wibox.widget.systray(),
-           --  mytextclock,
-         --    s.mylayoutbox,
-       --  },
-    -- }
+    s.mywibox:setup {
+        layout = wibox.layout.align.horizontal,
+        { -- Left widgets
+            layout = wibox.layout.fixed.horizontal,
+            mylauncher,
+            s.mytaglist,
+            s.mypromptbox,
+        },
+        s.mytasklist, -- Middle widget
+        { -- Right widgets
+            layout = wibox.layout.fixed.horizontal,
+           battery_widget(),  
+	   volume_widget(),
+	   brightness_widget(),
+	   -- mykeyboardlayout,
+            wibox.widget.systray(),
+            mytextclock,
+            s.mylayoutbox,
+  	  
+	
+    },
+    }
 end)
 -- }}}
 
@@ -280,7 +304,21 @@ globalkeys = gears.table.join(
         end,
         {description = "go back", group = "client"}),
 
-    -- Standard program
+--flameshot
+awful.key({ modkey, }, "Print", function () awful.util.spawn("flameshot full")  end),
+awful.key({ "Shift"}, "Print", function () awful.util.spawn("flameshot gui")  end),
+
+--volume bind
+awful.key({}, "XF86AudioRaiseVolume", function() volume_widget.inc() end),
+awful.key({}, "XF86AudioLowerVolume", function() volume_widget.dec() end),
+awful.key({}, "XF86AudioMute", function() volume_widget.toggle() end),
+
+--brightes bin§
+
+awful.key({}, "XF86MonBrightnessUp", function () brightness_widget:inc() end, {description = "increase brightness", group = "custom"}),
+awful.key({}, "XF86MonBrightnessDown", function () brightness_widget:dec() end, {description = "decrease brightness", group = "custom"}),
+
+-- Standard program
     awful.key({ modkey,           }, "Return", function () awful.spawn(terminal) end,
               {description = "open a terminal", group = "launcher"}),
     awful.key({ modkey, "Control" }, "r", awesome.restart,
@@ -496,9 +534,9 @@ awful.rules.rules = {
       }, properties = { floating = true }},
 
     -- Add titlebars to normal clients and dialogs
-    -- { rule_any = {type = { "normal", "dialog" }
-     --  }, properties = { titlebars_enabled = true }
-   -- },
+    { rule_any = {type = { "normal", "dialog" }
+      }, properties = { titlebars_enabled = true }
+    },
 
     -- Set Firefox to always map on the tag named "2" on screen 1.
     -- { rule = { class = "Firefox" },
@@ -565,8 +603,11 @@ end)
 client.connect_signal("mouse::enter", function(c)
     c:emit_signal("request::activate", "mouse_enter", {raise = false})
 end)
---CUSTOM CONFIG TIESODSTO
-beautiful.useless_gap=20
+
 client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
+--
+-- Käynnistyy alusas
+awful.spawn.with_shell("nitrogen --restore &")
+awful.spawn.with_shell("xautolock -time 5 -locker slock &")
