@@ -1,0 +1,28 @@
+
+XTerm.termName: xterm-256color
+
+XTerm.vt100.locale: false
+XTerm.vt100.utf8: true
+
+XTerm.vt100.metaSendsEscape: true
+
+XTerm.vt100.saveLines: 4096
+
+XTerm.vt100.scrollBar: true
+XTerm.vt100.scrollbar.width: 8
+
+XTerm.vt100.geometry: 80x32
+
+<Btn1Up>: select-end(PRIMARY, CLIPBOARD, CUT_BUFFER0)
+
+Ctrl Shift <Key>C: copy-selection(CLIPBOARD) \n\
+Ctrl Shift <Key>V: insert-selection(CLIPBOARD)
+
+xterm*faceName: DejaVu Sans Mono
+xterm*faceSize: 10
+
+
+
+
+
+
