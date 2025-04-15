@@ -1,0 +1,18 @@
+serverAddr = "144.24.169.28"
+serverPort = 12090
+auth.token = "YksKaksKolmeNeljäViisKuusSeittemäKaheksaYheksäKymmene"
+loginFailExit = false
+
+[[proxies]]
+name = "test-tcp"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 25565
+remotePort = 25565
+
+[[proxies]]
+name = "ssh"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 22
+remotePort = 9999
