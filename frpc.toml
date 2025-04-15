@@ -1,6 +1,6 @@
-serverAddr = "144.24.169.28"
-serverPort = 12090
-auth.token = "YksKaksKolmeNeljäViisKuusSeittemäKaheksaYheksäKymmene"
+serverAddr = ""
+serverPort = 700
+auth.token = ""
 loginFailExit = false
 
 [[proxies]]
